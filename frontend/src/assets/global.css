@@ -1,0 +1,10 @@
+html,body,div{
+    margin: 0;
+    padding: 0;
+}
+html,body{
+    height: 100%;
+}
+body{
+    background-color: rgb(246, 246, 246)
+}

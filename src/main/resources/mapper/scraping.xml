@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="osmiumd.java2_backend.mapper.RepositoryMapper">
+
+    <select id="languageSum" resultType="osmiumd.java2_backend.dto.LanguageSum">
+        select rl.name as language
+        <if test="aggr == 0">
+            ,sum(count) as sum
+        </if>
+        <if test="aggr == 1">
+            ,sum(count * cast(stars as BIGINT)) as sum
+        </if>
+        <if test="aggr == 2">
+            ,sum(count * cast(LOG(2,stars) as BIGINT)) as sum
+        </if>
+        from repository
+        join repository_language rl on repository.id = rl.repos_id
+        where main_language = #{language}
+        and rl.name != repository.main_language
+        and stars >= #{limit}
+        group by rl.name
+        order by sum desc;
+    </select>
+
+    <select id="languageTopic" resultType="osmiumd.java2_backend.dto.LanguageSum">
+        select rt.name as language
+        <if test="aggr == 0">
+            ,count(rt.name) as sum
+        </if>
+        <if test="aggr == 1">
+            ,sum(cast(stars as BIGINT)) as sum
+        </if>
+        <if test="aggr == 2">
+            ,sum(cast(LOG(2,stars) as BIGINT)) as sum
+        </if>
+        from repository r
+        join repository_topic rt on r.id = rt.repos_id
+        where r.main_language = #{language}
+        and lower(rt.name) != lower(r.main_language)
+        and stars >= #{limit}
+        group by rt.name
+        order by sum desc;
+    </select>
+
+    <select id="reposCreate" resultType="osmiumd.java2_backend.dto.LanguageSum">
+        select main_language as language, count(main_language) as sum
+        from repository
+        where create_time between #{qStart} and #{qEnd}
+          and stars >= #{limit}
+        group by main_language
+        order by main_language;
+    </select>
+
+    <select id="searchPage" resultType="osmiumd.java2_backend.dto.Repository">
+        select *
+        from repository
+        where lower(' ' || name || ' ') like #{search}
+        and create_time between #{start} and #{end}
+        <if test="language!=null">
+            and main_language=#{language}
+        </if>
+        order by stars desc
+        limit #{limit} offset #{offset};
+    </select>
+
+    <select id="searchPageCount" resultType="Integer">
+        select count(*)
+        from repository
+        where lower(' ' || name || ' ') like #{search}
+        and create_time between #{start} and #{end}
+        <if test="language!=null">
+            and main_language=#{language}
+        </if>;
+    </select>
+
+</mapper>
